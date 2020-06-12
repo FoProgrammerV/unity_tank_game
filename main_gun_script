@@ -1,0 +1,408 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class MainGun : MonoBehaviour
+{
+    // Start is called before the first frame update
+    //UI Stuff
+    public Text ammoCapacityText;
+    public Text currentAmmoText;
+    public Text practicalAmmoText;
+    public Text gunNameText;
+
+    public Slider reloadTimeBar;
+    public Text reloadTimeText;
+
+    public Text currentRPMText;
+    public Text minimumRPMText;
+    public Text maximumRPMText;
+
+    public Text currentAmmunitionTypeText;
+    public Text otherAmmosText;
+
+    public RawImage[] ammoRawImages;
+
+    public Texture[] ammoImages;
+
+    //Variables - public
+
+    public float totalAmmo;
+    public float currentAmmo; //public to track it
+    public float practicalAmmo;
+    public float reloadTime;
+    public float[] RPMCycles;
+    public float VelocityForce;
+
+    public string GunName;
+    public string[] ammunitionTypes;
+    public float[] ammunitionNumbers;
+
+    public Rigidbody[] ammoShellModels;
+    public Transform[] barrelsShootPos;
+
+    public Transform shootSoundHolder;
+    public Transform reloadSoundHolder;
+    public Transform destroySoundHolder; //daha sonrası için
+
+    public Transform[] shootEffectHolders;
+    public Transform[] postEffectHolders;
+
+    //Variables internal
+
+    float reloadTimer;
+    float RPMTimer;
+    int AmmoImageCounter;
+    int  currentAmmunitionIndex;
+    bool readyToShoot = true;
+    bool reloading;
+    float ammoChangeCounter;
+    float postEffectCounter;
+    int currentRPMIndex;
+
+    void Start()
+    {
+        if(reloadTimeBar != null)
+        {
+            reloadTimeBar.maxValue = 100;
+            reloadTimeBar.value = 0;
+        }
+
+        SelectAmmo();
+        gunNameText.text = GunName;
+        currentAmmo = practicalAmmo;
+        ammunitionNumbers[currentAmmunitionIndex] -= practicalAmmo;
+        if(RPMCycles.Length > 0)
+        {
+            maximumRPMText.text = RPMCycles[RPMCycles.Length - 1].ToString();
+            minimumRPMText.text = RPMCycles[0].ToString();
+        }
+        else
+        {
+            maximumRPMText.text = "N/A";
+            minimumRPMText.text = "N/A";
+        }
+       System.Array.Resize(ref ammoRawImages, ammunitionTypes.Length); 
+        ammoCapacityText.text = ammunitionNumbers[currentAmmunitionIndex].ToString();
+        currentAmmoText.text =  currentAmmo.ToString() + "/";
+        practicalAmmoText.text =  practicalAmmo.ToString();
+        readyToShoot = true;
+        ammoRawImages[0].texture = ammoImages[currentAmmunitionIndex];
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+        if(RPMCycles.Length > 0)
+        {
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                SelectRPM(1);
+            }
+            if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                SelectRPM(-1);
+            }
+        }
+        else
+        {
+            if(currentRPMText != null && maximumRPMText != null && minimumRPMText != null)
+            {
+                currentRPMText.text = "N/A";
+                maximumRPMText.text = "N/A";
+                minimumRPMText.text = "N/A";
+            }
+
+        }
+
+        if (ammunitionTypes.Length > 1)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                currentAmmunitionIndex = 0;
+                SelectAmmo();
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                currentAmmunitionIndex = 1;
+                SelectAmmo();
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3) && ammunitionTypes[2] != null)
+            {
+                currentAmmunitionIndex = 2;
+                SelectAmmo();
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha4) && ammunitionTypes[3] != null)
+            {
+                currentAmmunitionIndex = 3;
+                SelectAmmo();
+            }
+        }
+        else
+        {
+            currentAmmunitionIndex = 0;
+        }
+
+        if (!reloading)
+        {
+            if (currentAmmo > 0)
+            {
+                
+            }
+            else
+            {
+                StartCoroutine(reloadGuns());
+            }
+        }
+
+        if (Input.GetButtonDown("Fire1"))
+        {
+         
+            if(readyToShoot)
+            {
+                if(!reloading)
+                {
+                    if (currentAmmo > 0)
+                    {
+                        StartCoroutine(shootGun());
+                    }
+                    else
+                    {
+                        StartCoroutine(reloadGuns());
+                    }
+                }
+               
+            }
+            else
+            {
+               
+
+            }
+
+        }
+
+
+    }
+
+    void SelectRPM(int direction)
+    {
+        gunNameText.text = GunName;
+        if (direction == 1)
+        {
+           
+            currentRPMIndex++;
+
+            if(currentRPMIndex > RPMCycles.Length + 1)
+            {
+                currentRPMIndex = 0;
+                
+            }
+          
+
+        }else if(direction == 0)
+        {
+            currentRPMIndex--;
+            if(currentRPMIndex < 0)
+            {
+                currentRPMIndex = RPMCycles.Length + 1;
+            }
+        }
+        currentRPMText.text = RPMCycles[currentRPMIndex].ToString();
+    }
+
+    void SelectAmmo()
+    {
+        if(gunNameText != null)
+        {
+            gunNameText.text = GunName;
+
+        }
+        if (!reloading)
+        {
+            if(currentAmmunitionTypeText != null && ammoCapacityText != null)
+            {
+                currentAmmunitionTypeText.text = ammunitionTypes[currentAmmunitionIndex];
+                ammoCapacityText.text = ammunitionNumbers[currentAmmunitionIndex].ToString();
+
+            }
+
+            otherAmmosText.text = " ";
+            foreach (string ammo in ammunitionTypes)
+            {
+                if (ammunitionTypes[currentAmmunitionIndex] != ammo)
+                {
+                    otherAmmosText.text += (System.Array.IndexOf(ammunitionTypes, ammo) + 1).ToString() + ". " + ammo.ToString() + System.Environment.NewLine;
+                }
+            }
+
+            AmmoImageCounter = -1;
+            if(ammoRawImages.Length > 0 )
+            {
+                ammoRawImages[0].texture = ammoImages[currentAmmunitionIndex];
+            }
+
+            StartCoroutine(changeAmmo());
+        }
+        
+      
+
+
+    }
+
+    IEnumerator changeAmmo()
+    {
+        ammoChangeCounter = 3f;
+        readyToShoot = false;
+        reloadTimeBar.maxValue = 100;
+        while(ammoChangeCounter > 0)
+        {
+            ammoChangeCounter--;
+            reloadTimeBar.value = (ammoChangeCounter * 100) / 3;
+            reloadTimeText.text = ammoChangeCounter.ToString();
+            yield return new WaitForSeconds(0.5f);
+        }
+        readyToShoot = true;
+        gunNameText.text = GunName;
+    }
+
+    IEnumerator reloadGuns()
+    {
+       
+        reloading = true;
+        reloadTimer = reloadTime;
+        if(reloadTimeBar != null)
+        {
+            reloadTimeBar.maxValue = 100;
+
+            reloadTimeBar.value = reloadTimeBar.maxValue;
+        }
+
+        while(reloadTimer > 0)
+        {
+            reloadTimer--;
+            if(reloadTimeBar != null)
+            {
+                reloadTimeBar.value = (reloadTimer * 100) / reloadTime;
+            }
+
+           if(reloadTimeText != null)
+            {
+                reloadTimeText.text = reloadTimer.ToString();
+
+            }
+            if (reloadTimer == 2) //yükleme sesi 2 saniyelik ve bu da en az 3 saniyelik yükleme olmak zorunda demek
+            {
+                if(reloadSoundHolder != null)
+                {
+                    reloadSoundHolder.GetComponent<AudioSource>().Play();
+                }
+            
+            }
+            yield return new WaitForSeconds(1f);
+        }
+      
+        if (currentAmmo > 0) //Eğer mermi hali hazırda varken tekrar doldurulduysa
+        {
+            //totalAmmo += currentAmmo;
+            currentAmmo = practicalAmmo;
+            ammunitionNumbers[currentAmmunitionIndex] -= practicalAmmo;
+        }
+        else
+        {
+            currentAmmo = practicalAmmo;
+           ammunitionNumbers[currentAmmunitionIndex] -= practicalAmmo;
+        }
+       
+        reloading = false;
+
+        if(currentAmmoText != null && gunNameText != null)
+        {
+            currentAmmoText.text = currentAmmo.ToString() + "/";
+            gunNameText.text = GunName;
+        }
+    
+    }
+
+    IEnumerator shootGun()
+    {
+        foreach(Transform barrelEnd in barrelsShootPos)
+        {
+            
+            foreach(Transform effectToInstantiate in shootEffectHolders)
+            {
+                Transform instantiatedParticle = Instantiate(effectToInstantiate, barrelEnd.position, barrelEnd.rotation, null) as Transform;
+                instantiatedParticle.gameObject.AddComponent<DestroyerScript>().duration = 4f;
+                instantiatedParticle.GetComponent<ParticleSystem>().Play();
+            }
+        }
+       if(shootSoundHolder != null)
+        {
+            shootSoundHolder.GetComponent<AudioSource>().Play();
+        }
+        
+
+        foreach (Transform tr in barrelsShootPos)
+        {
+            Rigidbody tankShell = Instantiate(ammoShellModels[currentAmmunitionIndex], tr.position,tr.rotation) as Rigidbody;
+            tankShell.transform.parent = null;
+            tankShell.velocity = -VelocityForce * tr.forward;
+        }
+
+        StartCoroutine(postEffectWaiter());
+        currentAmmo -= barrelsShootPos.Length;
+        readyToShoot = false;
+    
+
+       
+        if(RPMCycles.Length > 0)
+        {
+            yield return new WaitForSeconds(1 / (RPMCycles[currentRPMIndex] / 60));
+        }
+        else
+        {
+            yield return new WaitForSeconds(0f);
+        }
+    
+       
+        readyToShoot = true;
+        currentAmmoText.text = currentAmmo.ToString() + "/";
+        ammoCapacityText.text = ammunitionNumbers[currentAmmunitionIndex].ToString();
+        practicalAmmoText.text = practicalAmmo.ToString();
+        gunNameText.text = GunName;
+    }
+
+    IEnumerator postEffectWaiter()
+    {
+        if(postEffectHolders.Length > 0)
+        {
+            foreach (Transform postEffectHolder in postEffectHolders)
+            {
+                if (postEffectHolder.GetComponent<TrailRenderer>())
+                {
+                    postEffectHolder.GetComponent<TrailRenderer>().enabled = true;
+                }
+
+
+            }
+            postEffectCounter = 3f;
+            while (postEffectCounter > 0)
+            {
+                postEffectCounter--;
+                yield return new WaitForSeconds(1f);
+            }
+            foreach (Transform postEffectHolder in postEffectHolders)
+            {
+                if (postEffectHolder.GetComponent<TrailRenderer>())
+                {
+                    postEffectHolder.GetComponent<TrailRenderer>().enabled = false;
+                }
+                }
+        }
+      
+
+    }
+
+    
+}
