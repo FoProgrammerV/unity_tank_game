@@ -36,7 +36,6 @@ public class OtherGunsControl : MonoBehaviour
     public Transform []destroySoundHolders;
 
     public Transform[] shootPositions;
-    //public Transform[][] shootEffects; 
     public Transform[] shootEffects;
 
     bool readyToShoot = true;
@@ -103,7 +102,6 @@ public class OtherGunsControl : MonoBehaviour
             else
             {
                 Debug.Log("ReloadAfterClick");
-                //reload
                 if(otherGunTotalAmmos[currentOtherGunIndex] > 0 && !reloading)
                 {
                     StartCoroutine(reloadGun());
@@ -120,16 +118,7 @@ public class OtherGunsControl : MonoBehaviour
             Rigidbody instantiatedShell = Instantiate(otherGunAmmunitionModels[currentOtherGunIndex], shootPosition.transform.position, shootPosition.transform.rotation) as Rigidbody;
             instantiatedShell.transform.parent = null;
             instantiatedShell.velocity = -otherGunShootVelocities[currentOtherGunIndex] * shootPosition.forward;
-        //foreach (Transform[] listAccordingToGun in shootEffects) //listAccordingToGun is each gun
-        //{
-        //    foreach (Transform effect in listAccordingToGun) //the list of each particle for each gun
-        //    {
-        //        Transform toInst = Instantiate(effect, shootPositions[currentOtherGunIndex].position, shootPositions[currentOtherGunIndex].localRotation) as Transform;
-        //        toInst.gameObject.AddComponent<DestroyerScript>().duration = 3f;
-        //        toInst.GetComponent<ParticleSystem>().Play();
-        //        toInst.transform.parent = null;
-        //    }
-        //}
+
          foreach (Transform effect in shootEffects)
         {                            
             Transform toInst = Instantiate(effect, shootPositions[currentOtherGunIndex].position, shootPositions[currentOtherGunIndex].localRotation) as Transform;
@@ -144,15 +133,11 @@ public class OtherGunsControl : MonoBehaviour
         {
             shootSoundHolders[currentOtherGunIndex].GetComponent<AudioSource>().Play();
         }
-    //while(shootTimer > 0)
-        //{
-        //    shootTimer--;
-        //    yield return new WaitForSeconds(0.1f);
-        //}
+        
         yield return new WaitForSeconds(1 / (otherGunsRPMs[currentOtherGunIndex] / 60));
           
         readyToShoot = true;
-        //text
+        
         currentOthergunAmmunition.text = otherGunCurrentAmmos[currentOtherGunIndex].ToString() + "/";
         totalOthergunAmmunition.text = otherGunTotalAmmos[currentOtherGunIndex].ToString();
         practicalOtherGunAmmunition.text = otherGunPracticalAmmunitionNumbers[currentOtherGunIndex].ToString();
@@ -178,15 +163,11 @@ public class OtherGunsControl : MonoBehaviour
         }
         otherGunCurrentAmmos[currentOtherGunIndex] = otherGunPracticalAmmunitionNumbers[currentOtherGunIndex];
         otherGunTotalAmmos[currentOtherGunIndex] -= otherGunPracticalAmmunitionNumbers[currentOtherGunIndex];
-        reloading = false;
-        //Text
         currentOthergunAmmunition.text = otherGunCurrentAmmos[currentOtherGunIndex].ToString() + "/";
         totalOthergunAmmunition.text = otherGunTotalAmmos[currentOtherGunIndex].ToString();
         practicalOtherGunAmmunition.text = otherGunPracticalAmmunitionNumbers[currentOtherGunIndex].ToString();
         currentOtherGun.text = otherGuns[currentOtherGunIndex];
     }
 
-
-    // Update is called once per frame
    
 }
