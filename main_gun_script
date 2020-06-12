@@ -292,7 +292,7 @@ public class MainGun : MonoBehaviour
                 reloadTimeText.text = reloadTimer.ToString();
 
             }
-            if (reloadTimer == 2) //yükleme sesi 2 saniyelik ve bu da en az 3 saniyelik yükleme olmak zorunda demek
+            if (reloadTimer == 2) //Adjust this according to the reload sound fx length mine was 2 sec
             {
                 if(reloadSoundHolder != null)
                 {
@@ -303,9 +303,9 @@ public class MainGun : MonoBehaviour
             yield return new WaitForSeconds(1f);
         }
       
-        if (currentAmmo > 0) //Eğer mermi hali hazırda varken tekrar doldurulduysa
+        if (currentAmmo > 0)
         {
-            //totalAmmo += currentAmmo;
+  
             currentAmmo = practicalAmmo;
             ammunitionNumbers[currentAmmunitionIndex] -= practicalAmmo;
         }
